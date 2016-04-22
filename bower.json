@@ -1,0 +1,22 @@
+{
+  "name": "ownsocial2",
+  "version": "1.0",
+  "homepage": "https://github.com/dnl-jst/ownsocial2",
+  "authors": [
+    "Daniel Jost <info@daniel-jost.de>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "font-awesome": "latest",
+    "bootstrap": "latest",
+    "croppic": "latest"
+  }
+}

@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="index_login">
+
+        <form class="form-signin" role="form" method="post">
+
+            <h2 class="form-signin-heading"><?= $this->escape($this->_config['site_title']['value']); ?></h2>
+            <h3 class="form-signin-subheading"><?= $this->_('login_subheadline'); ?></h3>
+
+            <?php foreach ($this->messages as $message): ?>
+            <?= $this->displayMessage($message); ?>
+            <?php endforeach; ?>
+
+            <input name="email" type="email" class="form-control" placeholder="<?= $this->_('login_email'); ?>" required autofocus>
+
+            <input name="password" type="password" class="form-control" placeholder="<?= $this->_('login_password'); ?>" required>
+
+            <button class="btn btn-lg btn-primary btn-block" type="submit"><?= $this->_('login_btn_login'); ?></button>
+
+            <a class="btn btn-lg btn-default btn-block" href="/register/"><?= $this->_('login_btn_create_account'); ?></a>
+
+        </form>
+
+    </div>
+{% endblock %}

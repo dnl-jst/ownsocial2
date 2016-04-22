@@ -1,0 +1,340 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="conversation_index">
+        <div class="row">
+
+            <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                <div class="">
+                    <a class="btn btn-default conversation_create" href="#"><i class="fa fa-bullhorn"></i> <?= $this->_('conversation_create'); ?></a>
+                    <hr>
+                    <?php if ($this->conversations): ?>
+                    <ul id="conversation_list" class="nav nav-pills nav-stacked">
+                        <?php foreach ($this->conversations as $i => $conversation): ?>
+                        <li role="presentation" id="conversation_<?= $conversation->getId(); ?>" class="conversation <?= ($i === 0) ? ' active' : ''; ?>" data-conversation-id="<?= $conversation->getId(); ?>">
+                            <a href="#">
+                                <strong class="convert-emoji">
+                                    <?php if ($conversation->getTitle()): ?>
+                                    <?= $this->escape($conversation->getTitle()); ?>
+                                    <?php else: ?>
+                                    <?= $this->_('conversation_no_title'); ?>
+                                    <?php endif; ?>
+                                </strong><br />
+                                <small class="convert-emoji">
+									<span class="last-post">
+										<?php if ($lastPost = $conversation->getLastPost($this->_currentUser->getId())): ?>
+                                        <?= $this->escape($this->shorten($lastPost->getMessage(), 50)); ?>
+                                        <?php else: ?>
+                                        <p><?= $this->_('conversations_no_posts_yet'); ?></p>
+                                        <?php endif; ?>
+									</span>
+                                </small>
+                            </a>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="col-xm-8 col-sm-8 col-md-8 col-lg-8">
+
+                <?php if ($this->conversations): ?>
+                <div class="well well-sm">
+				<span>
+					<?= $this->_('conversations_members'); ?>:
+					<span id="conversation_member"></span>
+					<button type="button" class="btn btn-default btn-sm" data-toggle="modal" data-target="#conversation_add_member_modal"><i class="fa fa-plus"></i> <i class="fa fa-user"></i> <?= $this->_('conversations_add_members'); ?></button>
+				</span>
+                </div>
+                <?php endif; ?>
+
+                <div class="well well-sm">
+
+                    <?php if ($this->conversations): ?>
+
+                    <div id="message_box" style="height: 350px; padding: 20px; overflow-y: auto;">
+
+                        <div class="alert alert-warning load_more_posts" style="text-align: center; displ ay: none;">
+                            <a href="#"><?= $this->_('conversations_load_more_posts'); ?></a>
+                        </div>
+
+                        <div id="message_box_inner">
+                            <hr>
+                        </div>
+
+                    </div>
+
+                    <?php else: ?>
+
+                    <div style="text-align: center;">
+                        <p>
+                            <?= $this->_('conversations_no_conversations_yet'); ?>
+                        </p>
+                        <p>
+                            <a class="btn btn-default conversation_create" href="#"><i class="fa fa-bullhorn"></i> <?= $this->_('conversation_create'); ?></a>
+                        </p>
+                    </div>
+
+                    <?php endif; ?>
+
+                </div>
+
+                <?php if ($this->conversations): ?>
+                <div class="well well-sm">
+
+                    <div id="add_message_box">
+                        <textarea class="form-control" id="conversation_post_message"></textarea>
+                    </div>
+
+                    <div class="text-right" style="margin-top: 5px;">
+                        <button class="btn btn-primary" id="conversation_post_add"><?= $this->_('conversation_create_post'); ?></button>
+                    </div>
+
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="conversation_add_member_modal" role="dialog" aria-labelledby="conversation_add_member_modal_title" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="conversation_add_member_modal_title"><?= $this->_('conversation_add_member_modal_title'); ?></h4>
+                </div>
+                <div class="modal-body">
+                    <form role="form">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="conversation_add_member_search" value="" placeholder="Search for user..." />
+                        </div>
+
+                        <div id="conversation_add_member_suggestions">
+                            <!-- -->
+                        </div>
+
+                        <div id="conversation_add_member_selected">
+                            <h3>Selected:</h3>
+                            <div class="well well-sm">
+                                No members selected yet. Search above!
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="action_conversation_add_member">Add member(s)</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <script type="text/javascript">
+
+        <?php if ($this->conversations): ?>
+        var currentConversation = <?= json_encode($this->conversations[0]->getId()); ?>;
+        <?php else: ?>
+        var currentConversation = null;
+        <?php endif; ?>
+
+        $(function() {
+
+            var loadPosts = function(offset, callback, append) {
+
+                if (typeof offset == 'undefined') {
+                    offset = 0;
+                }
+
+                if (typeof append == 'undefined') {
+                    append = false;
+                }
+
+                $.ajax({
+                    method: 'post',
+                    url: '/conversation/get-posts/',
+                    data: {
+                        conversation_id: currentConversation,
+                        offset: offset
+                    },
+                    dataType: 'json',
+                    success: function(result) {
+
+                        var newPosts = 0;
+
+                        for (var i = 0; i < result.length; i++) {
+
+                            var post = result[i];
+
+                            if ($('#message_' + post.id).length === 0) {
+
+                                newPosts++;
+
+                                var message = $('<div class="row message" id="message_' + post.id + '"></div>');
+
+                                $(message).append('<div class="col-xs-2"><a href="/profile/?user=' + post.user.id + '"><img class="img-responsive" src="/file/image/?file=' + post.user.portrait_file_id + '" /></a></div>');
+
+                                var rightCol = $('<div class="col-xs-10"><a href="/profile/?user=' + post.user.id + '">' + post.user.first_name + ' ' + post.user.last_name + '</a></div>');
+
+                                $(rightCol).appendTo(message);
+
+                                $(rightCol).append('<p>' + emojione.toImage(result[i].message) + '</p>');
+
+                                if (append) {
+                                    $(message).appendTo('#message_box_inner');
+                                    $('<hr>').appendTo('#message_box_inner');
+                                } else {
+                                    $(message).prependTo('#message_box_inner');
+                                    $('<hr>').prependTo('#message_box_inner');
+                                }
+
+                            }
+                        }
+
+                        if (newPosts > 0) {
+                            var firstPost = result[0];
+                            $('#conversation_' + currentConversation + ' .last-post').html(emojione.toImage(firstPost.message));
+                        }
+
+                        if (typeof callback !== 'undefined' && callback !== null) {
+                            callback(result.length);
+                        }
+                    }
+                });
+            };
+
+            var loadMembers = function(conversationId) {
+
+                $.ajax({
+                    method: 'post',
+                    url: '/conversation/get-members/',
+                    data: {
+                        conversation_id: conversationId
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+
+                        var memberSpan = $('#conversation_member');
+
+                        $(memberSpan).html('');
+
+                        for (var i = 0; i < result.length; i++) {
+
+                            var user = result[i];
+
+                            memberSpan.append('<a href="/profile/?user=' + user.id + '">' + user.first_name + ' ' + user.last_name + '</a>');
+
+                            if (i < (result.length - 1)) {
+                                memberSpan.append(', ');
+                            }
+                        }
+
+                    }
+                });
+
+            };
+
+            loadMembers(currentConversation);
+
+            loadPosts(0, function() {
+                $('#message_box').animate({scrollTop: 9999999}, 1);
+            });
+
+            $('.load_more_posts a').click(function(event) {
+
+                event.preventDefault();
+
+                loadPosts($('.message').length, function(loadedPosts) {
+                    if (loadedPosts > 0) {
+                        $('#message_box').animate({scrollTop: 0}, 500);
+                    }
+                });
+            });
+
+            var switchConversation = function(conversationId) {
+
+                currentConversation = conversationId;
+
+                $('.conversation').removeClass('active');
+                $('#conversation_' + currentConversation).addClass('active');
+
+                $('#message_box_inner').html('');
+
+                loadMembers(currentConversation);
+
+                loadPosts(0, function() {
+                    $('#message_box').animate({ scrollTop: $('#message_box')[0].scrollHeight}, 500);
+                });
+
+            };
+
+            $('.conversation').click(function(event) {
+
+                event.preventDefault();
+                switchConversation($(this).data('conversation-id'));
+
+            });
+
+            $('#conversation_post_add').click(function(event) {
+
+                event.preventDefault();
+
+                $.ajax({
+                    method: 'post',
+                    url: '/conversation/add-post/',
+                    data: {
+                        conversation_id: currentConversation,
+                        message: emojione.toShort($('#conversation_post_message').val())
+                    },
+                    dataType: 'json',
+                    success: function (result) {
+
+                        if (result.success) {
+
+                            $('#conversation_post_message').val('');
+
+                            loadPosts(null, function() {
+                                $('#message_box').animate({ scrollTop: $('#message_box')[0].scrollHeight}, 500);
+                            }, true);
+
+                        }
+                    }
+                });
+            });
+
+            $('.conversation_create').click(function(event) {
+
+                event.preventDefault();
+
+                $.ajax({
+                    method: 'post',
+                    url: '/conversation/create/',
+                    data: {},
+                    dataType: 'json',
+                    success: function (result) {
+
+                        if (currentConversation == null) {
+                            location.reload();
+                        } else {
+
+                            $('#conversation_list').prepend('<li role="presentation" id="conversation_' + result.conversation_id + '" class="conversation' +  + '" data-conversation-id="' + result.conversation_id + '"><a href="#"><strong></strong><br /><small><p><?= $this->_('conversations_no_posts_yet'); ?></p></small></a></li>');
+
+                            switchConversation(result.conversation_id);
+
+                        }
+
+                    }
+                });
+
+            });
+
+            setInterval(function() {
+                loadPosts(0, function() {
+                    $('#message_box').animate({ scrollTop: $('#message_box')[0].scrollHeight}, 500);
+                }, true);
+            }, 1000);
+
+        });
+
+    </script>
+{% endblock %}

@@ -1,0 +1,225 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="group_index">
+
+        <div id="group_information" class="well">
+            <div class="row">
+                <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                    <?php if ($this->isGroupAdmin): ?>
+                    <div class="portait" id="croppic-area" style="width: 200px; height: 200px; position: relative;">
+                        <?php endif; ?>
+                        <img style="width: 200px; height: 200px;" src="/file/image/?file=<?= $this->group->getPortraitFileId(); ?>" />
+                        <?php if ($this->isGroupAdmin): ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                    <span class="name"><?= $this->escape($this->group->getName()); ?></span>
+                    <p>
+                        <small><?= $this->escape($this->group->getDescription()); ?></small>
+                    </p>
+                    <?php if ($this->isGroupAdmin): ?>
+                    <button type="button" class="btn btn-default btn-sm" data-toggle="modal" data-target="#group_user_add_modal"><i class="fa fa-plus"></i> <i class="fa fa-user"></i> <?= $this->_('group_action_add_member'); ?></button>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+
+                <?php if ($this->group->getType() === \Model\Group::TYPE_PUBLIC || $this->userGroup): ?>
+
+                <ul class="nav nav-tabs" role="tablist" id="myTab">
+                    <li role="presentation" class="active"><a href="#posts" aria-controls="" role="tab" data-toggle="tab"><?= $this->_('group_tab_posts'); ?></a></li>
+                    <?php if ($this->group->getType() === \Model\Group::TYPE_PUBLIC || $this->userGroup): ?>
+                    <li role="presentation"><a href="#members" aria-controls="" role="tab" data-toggle="tab"><?= $this->_('group_tab_members'); ?></a></li>
+                    <?php endif; ?>
+                    <?php if ($this->isGroupAdmin): ?>
+                    <li role="presentation"><a href="#requests" aria-controls="" role="tab" data-toggle="tab"><?= $this->_('group_tab_requests'); ?><?= ($this->requests) ? ' <span class="badge">' . count($this->requests) . '</span>' : ''; ?></a></li>
+                    <?php endif; ?>
+                </ul>
+
+                <div class="tab-content">
+
+                    <div role="tabpanel" class="tab-pane active" id="posts">
+
+                        <?php if ($this->userGroup): ?>
+                        <div id="create_post" class="well">
+
+                            <form id="create_post_form" role="form">
+
+                                <div class="form-group">
+                                    <textarea id="post_content" class="form-control" name="content" placeholder="<?= $this->_('group_post_placeholder_text'); ?>"></textarea>
+                                    <input type="hidden" id="post_image_id" value="">
+                                    <input type="hidden" id="post_file_id" value="">
+                                </div>
+
+                                <div id="image_area"></div>
+
+                                <div class="form-group" style="text-align: right;">
+
+                                    <button id="post_select_image" class="btn btn-default"><i class="fa fa-plus"></i> <i class="fa fa-file-image-o"></i></button>
+                                    <input type="file" id="image_upload" accept="image/*" style="display: none;" />
+
+                                    <button id="post_select_file" class="btn btn-default" title="<?= $this->_('post_btn_add_file'); ?>"><i class="fa fa-plus"></i> <i class="fa fa-file-o"></i></button>
+                                    <input type="file" id="file_upload" accept="application/*" style="display: none;" />
+
+                                    <input type="submit" class="btn btn-primary" value="<?= $this->_('group_post_btn_post'); ?>" />
+                                </div>
+
+                            </form>
+
+                        </div>
+                        <?php endif; ?>
+
+                        <div class="posts">
+
+                            <!-- -->
+
+                        </div>
+
+                    </div>
+
+                    <?php if ($this->group->getType() === \Model\Group::TYPE_PUBLIC || $this->userGroup): ?>
+                    <div role="tabpanel" class="tab-pane" id="members">
+
+                        <?php if ($this->members): ?>
+                        <?php foreach ($this->members as $user): ?>
+                        <div class="well well-sm">
+                            <div class="col-xs-3">
+                                <a href="/profile/?user=<?= $user->getId(); ?>">
+                                    <img style="width: 80px; height: 80px;" src="/file/image/?file=<?= $user->getPortraitFileId(); ?>" />
+                                </a>
+                            </div>
+                            <div class="col-xs-9">
+                                <a href="/profile/?user=<?= $user->getId(); ?>">
+                                    <h4 class="list-group-item-heading"><?= $this->escape($user->getFirstName() . ' ' . $user->getLastName()); ?></h4>
+                                    <p class="list-group-item-text">
+                                        <?= $this->escape($user->getDepartment()); ?>
+                                    </p>
+                                </a>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <?php endforeach; ?>
+                        <?php else: ?>
+                        <p><?= $this->_('group_members_no_members'); ?></p>
+                        <?php endif; ?>
+
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($this->isGroupAdmin): ?>
+                    <div role="tabpanel" class="tab-pane" id="requests">
+
+                        <?php if ($this->requests): ?>
+                        <?php foreach ($this->requests as $user): ?>
+                        <div class="well well-sm">
+                            <div class="col-xs-3">
+                                <a href="/profile/?user=<?= $user->getId(); ?>">
+                                    <img style="width: 80px; height: 80px;" src="/file/image/?file=<?= $user->getPortraitFileId(); ?>" />
+                                </a>
+                            </div>
+                            <div class="col-xs-9">
+                                <a href="/profile/?user=<?= $user->getId(); ?>">
+                                    <h4 class="list-group-item-heading"><?= $this->escape($user->getFirstName() . ' ' . $user->getLastName()); ?></h4>
+                                    <p class="list-group-item-text">
+                                        <?= $this->escape($user->getDepartment()); ?>
+                                    </p>
+                                </a>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <?php endforeach; ?>
+                        <?php else: ?>
+                        <p><?= $this->_('group_requests_no_requests'); ?></p>
+                        <?php endif; ?>
+
+                    </div>
+                    <?php endif; ?>
+
+                </div>
+
+                <?php endif; ?>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script type="text/javascript">
+
+        var groupId = <?= json_encode($this->group->getId()); ?>;
+
+    </script>
+
+    <?php if ($this->isGroupAdmin): ?>
+    <div class="modal fade" id="group_user_add_modal" role="dialog" aria-labelledby="group_modal_title" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="group_user_modal_title"><?= $this->_('group_user_modal_title'); ?></h4>
+                </div>
+                <div class="modal-body">
+                    <form role="form">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="group_user_add_search" value="" placeholder="<?= $this->_('group_user_add_search'); ?>" />
+                        </div>
+
+                        <div id="group_user_add_suggestions">
+                            <!-- -->
+                        </div>
+
+                        <div id="group_user_add_selected">
+                            <h3><?= $this->_('group_user_add_selected'); ?>:</h3>
+                            <div class="well well-sm">
+                                <?= $this->_('group_user_add_selected_no_selected'); ?>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal"><?= $this->_('btn_cancel'); ?></button>
+                    <button type="button" class="btn btn-primary" id="action_add_group_members"><?= $this->_('group_user_add_btn_add_members'); ?></button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+    <?php endif; ?>
+
+    <script type="text/javascript">
+
+        var translations = {
+            group_user_add_no_user_matched_search_criteria: <?= json_encode($this->_('group_user_add_no_user_matched_search_criteria')); ?>,
+        group_user_add_suggestions: <?= json_encode($this->_('group_user_add_suggestions')); ?>
+        };
+
+    </script>
+
+    <?php if ($this->isGroupAdmin): ?>
+
+    <script type="text/javascript">
+
+        $(function() {
+
+            var croppicContainerModalOptions = {
+                uploadUrl: '/group/save-pic/',
+                uploadData: {
+                    group: <?= json_encode($this->group->getId()); ?>
+        },
+            cropUrl: '/group/crop-pic/',
+                    modal: true,
+                    imgEyecandyOpacity:0.4,
+                    loaderHtml:'<div class="loader bubblingG"><span id="bubblingG_1"></span><span id="bubblingG_2"></span><span id="bubblingG_3"></span></div> '
+        };
+
+            var cropContainerModal = new Croppic('croppic-area', croppicContainerModalOptions);
+
+        });
+    </script>
+
+    <?php endif; ?>
+{% endblock %}
